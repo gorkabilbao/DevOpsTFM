@@ -1,0 +1,66 @@
+---
+- name: Install Jenkins
+  hosts: all
+  become: true
+  
+  tasks:
+
+    #Update package cache
+    - name: Update Package Cache (apt/Ubuntu)
+      tags: always
+      apt:
+        update_cache: yes
+
+    #Install openjdk-8-jdk 
+    - name: Install openjdk-8-jdk
+      apt: name=openjdk-8-jdk state=present update_cache=yes
+
+    #Install Nginx 
+    - name: Install Nginx
+      apt: name=nginx state=present update_cache=yes
+
+    #Get the Jenkis CI
+    - name: Get the Jenkis CI
+      apt_key:
+        url: https://pkg.jenkins.io/debian/jenkins-ci.org.key
+        state: present
+      become: yes
+      become_method: "sudo"
+      #command: wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo apt-key add -
+
+    #Add to source list
+    - name: Add to source list
+      command: sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+
+    #Update package cache
+    - name: Update Package Cache (apt/Ubuntu)
+      tags: always
+      apt:
+        update_cache: yes
+
+    #Install Jenkins
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+
+    #Start & Enable Jenkins
+    - name: Start & Enable Jenkins
+      service: 
+        name: jenkins
+        state: started
+    # Sleep for 30 seconds and continue with play
+    - name: Sleep for 30 seconds and continue with play
+      wait_for: 
+        timeout: 30
+
+    # Get the password
+    - name: Get init password Jenkins
+      shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+      changed_when: false
+      register: result
+
+    # Print init password Jenkins
+    - name: Print init password Jenkins
+      debug:
+        var: result.stdout

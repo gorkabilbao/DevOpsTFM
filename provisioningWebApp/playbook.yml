@@ -1,0 +1,119 @@
+---
+- hosts: all
+  become: true
+
+  tasks:
+
+  #Check that we can connect
+  - name: Make sure we can connect
+    ping:
+
+  #Instalar las utilidades necesarias
+  - name: Install required tools
+    apt: name={{item}} state=present
+    loop:
+    - unzip
+
+  #Install Apache 
+  - name: Install Apache
+    apt: name=apache2 state=present update_cache=yes
+
+  # Install net core SDK
+  - name: Download MS product repository
+    get_url:
+      url: https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
+      dest: /tmp/packages-microsoft-prod.deb
+  - name: Install MS product repository
+    apt: deb=/tmp/packages-microsoft-prod.deb
+    become: true
+  - name: Make sure HTTPS is supported by apt
+    apt:
+      name: apt-transport-https
+      state: present
+      update_cache: no
+    become: true
+  - name: Install .NET Core SDK
+    apt:
+      name: dotnet-sdk-2.2
+      state: present
+      update_cache: yes
+    become: true
+
+  # Create a directory to host the app
+  - name: Create directory to host the app
+    file:
+      path: /var/www/webapi
+      state: directory
+
+  # Copy from main machine to Vagrant VM
+  - name: Copy files to temp folder
+    #copy: src=files/publish/. dest=/tmp/publish/
+    command: cp -r files/publish/. /tmp/publish/
+
+  # Copy the files internally
+  - name: Copy files internally
+    command: cp -r /tmp/publish/. /var/www/webapi/
+
+  # Open the TCP/port 
+  - name: Open the TCP/port
+    command: ufw allow 5000/tcp
+
+  # Enable the port
+  - name: Enable the port
+    command: ufw enable
+
+  # Copy the template of the service webapi.service
+  - name: Create nginx config
+    template: src=templates/service/webapi.service dest=/etc/systemd/system/webapi.service
+
+  # Daemon-reload
+  - name: Daemon-reload
+    command: systemctl daemon-reload
+
+  # Enable webapi.service
+#  - name: Enable webapi.service
+#    command: systemctl enable webapi.service
+  - name: ensure webapi.service service is started
+    service:
+      name: webapi.service
+      state: started
+    become: true
+
+  # Add the port 88 to apache2
+  - name: Add the port 88 to apache2
+    template: src=templates/apache2/ports.conf dest=/etc/apache2/ports.conf
+
+  # Enable the apache modules Step 1 of 2
+  - name: Enable the apache modules Step 1 of 2
+    command: a2enmod proxy proxy_http proxy_html proxy_wstunnel
+
+  # Enable the apache modules Step 2 of 2
+  - name: Enable the apache modules Step 2 of 2
+    command: a2enmod rewrite
+
+  # Add the apache2 config
+  - name: Add the apache2 config
+    template: src=templates/apache2/webapi.conf dest=/etc/apache2/conf-enabled/webapi.conf
+
+  # Re-Start apache2 service
+  - name: restart the apache2 service
+    service:
+      name: apache2
+      state: restarted
+    become: true
+
+    # Open the TCP/port 88
+  - name: Open the TCP/port 88
+    command: ufw allow 88/tcp
+
+  # Enable the port
+  - name: Enable the port
+    command: ufw enable
+
+  
+
+
+
+
+
+

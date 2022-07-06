@@ -1,7 +1,7 @@
 # DevOpsTFM
 Este repositorio forma parte de un trabajo fin de master
 
-Consta de un vagrantfile que ejecutara 3 maquinas virtuales:<br />
+Consta de un vagrantfile que ejecutara 3 maquinas virtuales:<br /><br />
   1 Maquina virtual para alojar la aplicacion que se desplegara y configurara con Ansible con el playbook ubicado en la carpeta "provisioningWebApp"<br />
   1 Maquina virtual para alojar la Base de Datos que se desplegara y configurara con Ansible con el playbook ubicado en la carpeta "provisioningMySQL"<br />
   1 Maquina virtual para alojar la herramienta Jenkins que se configurara con Ansible con el playbook ubicado en la carpeta "provisioningJenkins"<br />
